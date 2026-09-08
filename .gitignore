@@ -17,3 +17,6 @@ data_*/
 mono_crash.*.json
 
 .DS_Store
+
+# Local web export output (rebuilt via export_presets.cfg, not committed)
+/web_build/
