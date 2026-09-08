@@ -1,3 +1,13 @@
-[gd_scene format=3 uid="uid://b1aping57fd8k"]
+[gd_scene load_steps=3 format=3 uid="uid://b1aping57fd8k"]
 
-[node name="Node2D" type="Node2D" unique_id=561872834]
+[ext_resource type="PackedScene" path="res://ship.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://gravity_source.tscn" id="2"]
+
+[node name="Node2D" type="Node2D"]
+
+[node name="GravitySource" parent="." instance=ExtResource("2")]
+position = Vector2(576, 324)
+
+[node name="Ship" parent="." instance=ExtResource("1")]
+position = Vector2(200, 500)
+velocity = Vector2(0, -120)
