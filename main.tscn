@@ -1,12 +1,17 @@
-[gd_scene load_steps=3 format=3 uid="uid://b1aping57fd8k"]
+[gd_scene load_steps=4 format=3 uid="uid://b1aping57fd8k"]
 
 [ext_resource type="PackedScene" path="res://ship.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://gravity_source.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://black_hole.tscn" id="3"]
 
 [node name="Node2D" type="Node2D"]
 
 [node name="GravitySource" parent="." instance=ExtResource("2")]
 position = Vector2(576, 324)
+
+[node name="BlackHole" parent="." instance=ExtResource("3")]
+position = Vector2(950, 150)
+destination = Vector2(150, 550)
 
 [node name="Ship" parent="." instance=ExtResource("1")]
 position = Vector2(200, 500)
