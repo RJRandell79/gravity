@@ -113,11 +113,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
 			_try_select(mb.position)
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
-			zoom = clamp(zoom - ZOOM_STEP, ZOOM_MIN, ZOOM_MAX)
-			_update_camera()
+			_zoom_by(-ZOOM_STEP)
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
-			zoom = clamp(zoom + ZOOM_STEP, ZOOM_MIN, ZOOM_MAX)
-			_update_camera()
+			_zoom_by(ZOOM_STEP)
 	elif event is InputEventMouseMotion and _dragging:
 		var mm := event as InputEventMouseMotion
 		var delta: Vector2 = mm.position - _drag_last
@@ -125,10 +123,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		yaw -= delta.x * ORBIT_SPEED
 		pitch = clamp(pitch - delta.y * ORBIT_SPEED, -1.4, 1.4)
 		_update_camera()
+	elif event is InputEventPanGesture:
+		# trackpad two-finger scroll (macOS) arrives as a pan gesture, not
+		# a mouse-wheel button event
+		var pan := event as InputEventPanGesture
+		_zoom_by(pan.delta.y * ZOOM_STEP)
+	elif event is InputEventMagnifyGesture:
+		# trackpad pinch (macOS): >1.0 = spreading fingers = zoom in
+		var mag := event as InputEventMagnifyGesture
+		_zoom_by(-(mag.factor - 1.0) * ZOOM_STEP * 5.0)
 
 func _update_camera() -> void:
 	camera_rig.rotation = Vector3(pitch, yaw, 0.0)
 	camera.position = Vector3(0, 0, zoom)
+
+func _zoom_by(amount: float) -> void:
+	var before := zoom
+	zoom = clamp(zoom + amount, ZOOM_MIN, ZOOM_MAX)
+	_update_camera()
+	if zoom != before:
+		print("star map: zoom %.1f -> %.1f" % [before, zoom])
 
 func pick_star_at_screen_pos(screen_pos: Vector2) -> StaticBody3D:
 	var space_state := get_world_3d().direct_space_state
@@ -145,3 +159,5 @@ func _try_select(screen_pos: Vector2) -> void:
 	if star:
 		selected_star = star
 		print("star map: selected %s at %s" % [star.name, star.position])
+	else:
+		print("star map: click at %s hit no star" % [screen_pos])
