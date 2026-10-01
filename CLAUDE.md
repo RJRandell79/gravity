@@ -18,7 +18,15 @@ Project instructions for Claude Code working in this repo. Full project overview
 
 ## Current focus
 
-Issue #1 — Ship movement (thrust and gravity), Foundation milestone. No black holes, star map, UI, or art yet — just a single ship responding correctly to thrust, momentum, and one placeholder gravity source. See the issue body for the full "done when" list.
+World milestone, Phase 1: a real galaxy. Work these issues in order, one branch each:
+1. Celestial body data model
+2. Procedural galaxy generation
+3. Multi-body system flight scene
+4. Collapsar jump routing (original rule)
+
+Design reference for the original game, including body composition, spectral classes and jump routing: docs/original-game-reference.md
+
+Still out of scope for World: isometric view and the Grid (World Phase 2), combat, fleet orders, changing body properties.
 
 ## Notes
 
