@@ -11,13 +11,14 @@ config_version=5
 [application]
 
 config/name="Gravity"
-run/main_scene="uid://b1aping57fd8k"
+run/main_scene="res://star_map.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
 TimeSystem="*res://time_system.gd"
+NavState="*res://nav_state.gd"
 
 [display]
 

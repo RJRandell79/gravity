@@ -1,8 +1,9 @@
 extends Node3D
 
 ## Navigable 3D cube star map: placeholder star points inside a wireframe
-## cube, orbit/zoom camera, and click-to-select. Map screen only -- no
-## connection to flight yet (see #7).
+## cube, orbit/zoom camera, and click-to-select. Confirming a selection
+## (ui_accept) hands the destination to NavState and switches to the
+## flight scene.
 
 const CUBE_SIZE := 6.0
 const STAR_COUNT := 12
@@ -12,6 +13,10 @@ const ZOOM_MIN := 4.0
 const ZOOM_MAX := 20.0
 const ORBIT_SPEED := 0.01
 const ZOOM_STEP := 1.0
+
+const FLIGHT_SCENE := "res://main.tscn"
+const FLIGHT_SPAWN_SCALE := 60.0
+const FLIGHT_SPAWN_OFFSET := Vector2(576, 324)
 
 @onready var camera_rig: Node3D = $CameraRig
 @onready var camera: Camera3D = $CameraRig/Camera3D
@@ -132,6 +137,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		# trackpad pinch (macOS): >1.0 = spreading fingers = zoom in
 		var mag := event as InputEventMagnifyGesture
 		_zoom_by(-(mag.factor - 1.0) * ZOOM_STEP * 5.0)
+	elif event.is_action_pressed("ui_accept"):
+		_confirm_travel()
+
+func _confirm_travel() -> void:
+	if selected_star == null:
+		return
+	var spawn := Vector2(selected_star.position.x, selected_star.position.y) * FLIGHT_SPAWN_SCALE + FLIGHT_SPAWN_OFFSET
+	NavState.set_pending_spawn(spawn)
+	print("star map: confirmed travel to %s -- flight spawn %s" % [selected_star.name, spawn])
+	get_tree().change_scene_to_file(FLIGHT_SCENE)
 
 func _update_camera() -> void:
 	camera_rig.rotation = Vector3(pitch, yaw, 0.0)
