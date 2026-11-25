@@ -1,13 +1,29 @@
 extends Node3D
 
-## Navigable 3D cube star map: placeholder star points inside a wireframe
-## cube, orbit/zoom camera, and click-to-select. Confirming a selection
-## (ui_accept) hands the destination to NavState and switches to the
-## flight scene.
+## Navigable 3D cube star map: the generated galaxy's systems inside a
+## wireframe cube, orbit/zoom camera, and click-to-select. Confirming a
+## selection (ui_accept) hands the destination to NavState and switches to
+## the flight scene.
+##
+## Holo Tank legend (from the original): star colour = system status
+## (green Terran, red Outie, amber unknown), a small cyan blip beside the
+## star = the system has a black hole, a cyan ring = home system.
 
-const CUBE_SIZE := 6.0
-const STAR_COUNT := 12
-const STAR_SEED := 1
+const CUBE_SIZE := GalaxyGenerator.CUBE_SIZE
+
+const STAR_RADIUS := 0.07
+const STAR_PICK_RADIUS := 0.18 # larger than the visual sphere, easier to click
+const BLIP_RADIUS := 0.035
+const BLIP_OFFSET := Vector3(0.13, 0.13, 0.0) # up and right of the star, as seen from the camera
+const HOME_RING_RADIUS := 0.17
+const HOME_RING_THICKNESS := 0.012
+
+const STATUS_COLOURS := {
+	StarSystem.Status.TERRAN: Color(0.2, 0.9, 0.3),
+	StarSystem.Status.OUTIE: Color(0.95, 0.2, 0.2),
+	StarSystem.Status.UNKNOWN: Color(1.0, 0.75, 0.15),
+}
+const CYAN := Color(0.2, 0.9, 1.0)
 
 const ZOOM_MIN := 4.0
 const ZOOM_MAX := 20.0
@@ -21,8 +37,12 @@ const FLIGHT_SPAWN_OFFSET := Vector2(576, 324)
 @onready var camera_rig: Node3D = $CameraRig
 @onready var camera: Camera3D = $CameraRig/Camera3D
 
+## One body per generated system, in the same order as galaxy.systems.
 var stars: Array[StaticBody3D] = []
 var selected_star: StaticBody3D = null
+
+var _blips: Array[MeshInstance3D] = []
+var _home_rings: Array[MeshInstance3D] = []
 
 var yaw := 0.0
 var pitch := -0.4
@@ -69,33 +89,23 @@ func _build_cube_wireframe() -> void:
 	add_child(mesh_instance)
 
 func _spawn_stars() -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = STAR_SEED
-	var h := CUBE_SIZE / 2.0
-	for i in range(STAR_COUNT):
-		var pos := Vector3(
-			rng.randf_range(-h, h),
-			rng.randf_range(-h, h),
-			rng.randf_range(-h, h)
-		)
-		var star := _make_star(i, pos)
+	var galaxy: Galaxy = GalaxyState.galaxy
+	for i in range(galaxy.systems.size()):
+		var star := _make_star(i, galaxy.systems[i])
 		add_child(star)
 		stars.append(star)
 
-func _make_star(index: int, pos: Vector3) -> StaticBody3D:
+func _make_star(index: int, system: StarSystem) -> StaticBody3D:
 	var body := StaticBody3D.new()
 	body.name = "Star%d" % index
-	body.position = pos
+	body.position = system.position
 	body.input_ray_pickable = true
-
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color(1.0, 0.9, 0.6)
+	body.set_meta("system_index", index)
 
 	var sphere := SphereMesh.new()
-	sphere.radius = 0.12
-	sphere.height = 0.24
-	sphere.material = material
+	sphere.radius = STAR_RADIUS
+	sphere.height = STAR_RADIUS * 2.0
+	sphere.material = _unshaded_material(STATUS_COLOURS[system.status])
 
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.mesh = sphere
@@ -103,11 +113,45 @@ func _make_star(index: int, pos: Vector3) -> StaticBody3D:
 
 	var collision := CollisionShape3D.new()
 	var shape := SphereShape3D.new()
-	shape.radius = 0.3 # larger than the visual sphere, easier to click
+	shape.radius = STAR_PICK_RADIUS
 	collision.shape = shape
 	body.add_child(collision)
 
+	if system.has_black_hole():
+		var blip_mesh := SphereMesh.new()
+		blip_mesh.radius = BLIP_RADIUS
+		blip_mesh.height = BLIP_RADIUS * 2.0
+		blip_mesh.material = _unshaded_material(CYAN)
+		var blip := MeshInstance3D.new()
+		blip.name = "BlackHoleBlip"
+		blip.mesh = blip_mesh
+		body.add_child(blip)
+		_blips.append(blip)
+
+	if system.is_home:
+		var ring_mesh := TorusMesh.new()
+		ring_mesh.inner_radius = HOME_RING_RADIUS - HOME_RING_THICKNESS
+		ring_mesh.outer_radius = HOME_RING_RADIUS + HOME_RING_THICKNESS
+		ring_mesh.material = _unshaded_material(CYAN)
+		var ring := MeshInstance3D.new()
+		ring.name = "HomeRing"
+		ring.mesh = ring_mesh
+		body.add_child(ring)
+		_home_rings.append(ring)
+
 	return body
+
+func _unshaded_material(colour: Color) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.albedo_color = colour
+	return material
+
+## The generated system behind a star body, or null.
+func get_system(star: StaticBody3D) -> StarSystem:
+	if star == null or not star.has_meta("system_index"):
+		return null
+	return GalaxyState.galaxy.systems[star.get_meta("system_index")]
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -145,12 +189,23 @@ func _confirm_travel() -> void:
 		return
 	var spawn := Vector2(selected_star.position.x, selected_star.position.y) * FLIGHT_SPAWN_SCALE + FLIGHT_SPAWN_OFFSET
 	NavState.set_pending_spawn(spawn)
-	print("star map: confirmed travel to %s -- flight spawn %s" % [selected_star.name, spawn])
+	print("star map: confirmed travel to %s (%s) -- flight spawn %s" % [get_system(selected_star).name, selected_star.name, spawn])
 	get_tree().change_scene_to_file(FLIGHT_SCENE)
 
 func _update_camera() -> void:
 	camera_rig.rotation = Vector3(pitch, yaw, 0.0)
 	camera.position = Vector3(0, 0, zoom)
+	_face_markers_to_camera()
+
+## Keeps the black-hole blip in the star's top-right corner on screen and
+## the home ring flat to the camera, however the cube is orbited. The star
+## bodies sit in the map's own space, so the rig's basis is the camera's.
+func _face_markers_to_camera() -> void:
+	for blip in _blips:
+		blip.position = camera_rig.basis * BLIP_OFFSET
+	for ring in _home_rings:
+		# a torus lies in its local XZ plane; turn it to face the camera
+		ring.basis = camera_rig.basis * Basis(Vector3.RIGHT, PI / 2.0)
 
 func _zoom_by(amount: float) -> void:
 	var before := zoom
@@ -173,6 +228,7 @@ func _try_select(screen_pos: Vector2) -> void:
 	var star := pick_star_at_screen_pos(screen_pos)
 	if star:
 		selected_star = star
-		print("star map: selected %s at %s" % [star.name, star.position])
+		var system := get_system(star)
+		print("star map: selected %s (%s) at %s, %.1f ly from home" % [system.name, star.name, star.position, system.distance_ly])
 	else:
 		print("star map: click at %s hit no star" % [screen_pos])
