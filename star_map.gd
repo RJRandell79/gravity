@@ -2,8 +2,8 @@ extends Node3D
 
 ## Navigable 3D cube star map: the generated galaxy's systems inside a
 ## wireframe cube, orbit/zoom camera, and click-to-select. Confirming a
-## selection (ui_accept) hands the destination to NavState and switches to
-## the flight scene.
+## selection (ui_accept) hands the chosen system to NavState and switches to
+## the flight scene, which builds that system.
 ##
 ## Holo Tank legend (from the original): star colour = system status
 ## (green Terran, red Outie, amber unknown), a small cyan blip beside the
@@ -31,8 +31,6 @@ const ORBIT_SPEED := 0.01
 const ZOOM_STEP := 1.0
 
 const FLIGHT_SCENE := "res://main.tscn"
-const FLIGHT_SPAWN_SCALE := 60.0
-const FLIGHT_SPAWN_OFFSET := Vector2(576, 324)
 
 @onready var camera_rig: Node3D = $CameraRig
 @onready var camera: Camera3D = $CameraRig/Camera3D
@@ -187,9 +185,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _confirm_travel() -> void:
 	if selected_star == null:
 		return
-	var spawn := Vector2(selected_star.position.x, selected_star.position.y) * FLIGHT_SPAWN_SCALE + FLIGHT_SPAWN_OFFSET
-	NavState.set_pending_spawn(spawn)
-	print("star map: confirmed travel to %s (%s) -- flight spawn %s" % [get_system(selected_star).name, selected_star.name, spawn])
+	# stars are in galaxy.systems order, so the star's index is the system's
+	var index := stars.find(selected_star)
+	NavState.set_pending_system(index)
+	print("star map: confirmed travel to %s (%s) -- system %d" % [get_system(selected_star).name, selected_star.name, index])
 	get_tree().change_scene_to_file(FLIGHT_SCENE)
 
 func _update_camera() -> void:

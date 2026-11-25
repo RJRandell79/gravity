@@ -61,22 +61,23 @@ func _initialize() -> void:
 	var picked_after: StaticBody3D = map.pick_star_at_screen_pos(map.camera.unproject_position(home_body.global_position))
 	_check("picking still works after orbiting", picked_after, home_body)
 
-	# travel handoff is unchanged: confirming a selection switches to the
-	# flight scene, which consumes the spawn and puts the ship there
-	var expected: Vector2 = Vector2(home_body.position.x, home_body.position.y) * map.FLIGHT_SPAWN_SCALE + map.FLIGHT_SPAWN_OFFSET
-	map.selected_star = home_body
+	# travel handoff: confirming a selection hands its system to the flight
+	# scene, which consumes it and builds that system. Use a non-home system
+	# so the flight scene's home fallback can't pass by accident.
+	var target_index := (galaxy.home_index + 1) % galaxy.systems.size()
+	map.selected_star = map.stars[target_index]
 	map._confirm_travel()
+	_check("confirming travel hands over the selected system", nav.pending_system_index, target_index)
 	await process_frame
 	await process_frame
-	var ship: Node2D = null
+	var flight: Node = null
 	for child in root.get_children():
 		if child.has_node("Ship"):
-			ship = child.get_node("Ship")
-	_check("travel loaded the flight scene", ship != null, true)
-	if ship != null:
-		# the ship has already flown a frame or two under gravity
-		_check("ship spawned at the selected star's flight position", ship.global_position.distance_to(expected) < 25.0, true)
-	_check("pending spawn was consumed", nav.has_pending_spawn, false)
+			flight = child
+	_check("travel loaded the flight scene", flight != null, true)
+	if flight != null:
+		_check("flight scene built the selected system", flight.system, galaxy.systems[target_index])
+	_check("pending system was consumed", nav.has_pending_system(), false)
 
 	print("RESULT: %s (%d failures)" % ["PASS" if failures == 0 else "FAIL", failures])
 	quit(1 if failures > 0 else 0)
