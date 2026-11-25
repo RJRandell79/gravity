@@ -4,7 +4,7 @@ Project instructions for Claude Code working in this repo. Full project overview
 
 ## Stack
 
-- Godot 4.6, standard (non-Mono) build — GDScript only, no C#
+- Godot 4.7, standard (non-Mono) build — GDScript only, no C#
 - Primary export target: Web (HTML5)
 - Godot MCP server (`@coding-solo/godot-mcp`) is connected — use its tools to launch the editor, run the project, and manage scenes/nodes directly rather than just describing changes for a human to make by hand
 
