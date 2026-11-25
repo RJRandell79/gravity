@@ -1,7 +1,12 @@
+class_name GravitySource
 extends Node2D
 
-@export var mass: float = 4_000_000.0
+## Default from the one tuning table (a sun); the flight scene sets it per body.
+@export var mass: float = SystemLayout.FLIGHT_MASS[CelestialBody.BodyType.SUN]
+## Draw size, and the softening distance that stops the pull blowing up
+## near the centre.
 @export var radius: float = 24.0
+@export var colour: Color = Color(1.0, 0.7, 0.2)
 
 func _ready() -> void:
 	add_to_group("gravity_sources")
@@ -13,4 +18,4 @@ func get_pull(from_position: Vector2) -> Vector2:
 	return offset.normalized() * strength
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, radius, Color(1.0, 0.7, 0.2))
+	draw_circle(Vector2.ZERO, radius, colour)
