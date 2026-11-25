@@ -11,7 +11,8 @@ signal jump_triggered(body: Node2D)
 @export var trigger_radius: float = 40.0
 @export var destination: Vector2 = Vector2.ZERO
 @export var calendar_time_cost: float = 50.0
-@export var mass: float = 2_000_000.0
+## Default from the one tuning table; the flight scene sets it per body.
+@export var mass: float = SystemLayout.FLIGHT_MASS[CelestialBody.BodyType.BLACK_HOLE]
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 

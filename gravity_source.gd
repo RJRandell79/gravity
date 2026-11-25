@@ -1,7 +1,8 @@
 class_name GravitySource
 extends Node2D
 
-@export var mass: float = 4_000_000.0
+## Default from the one tuning table (a sun); the flight scene sets it per body.
+@export var mass: float = SystemLayout.FLIGHT_MASS[CelestialBody.BodyType.SUN]
 ## Draw size, and the softening distance that stops the pull blowing up
 ## near the centre.
 @export var radius: float = 24.0
