@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 TimeSystem="*res://time_system.gd"
 NavState="*res://nav_state.gd"
+GalaxyState="*res://galaxy_state.gd"
 
 [display]
 

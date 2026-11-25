@@ -8,13 +8,13 @@ A cozy-scale reimagining of *Gravity* (Image Works, 1990) — the Atari ST isome
 
 ## Built with
 
-- **[Godot 4.6](https://godotengine.org/)** — GDScript, targeting Web (HTML5) as the primary export platform
+- **[Godot 4.7](https://godotengine.org/)** — GDScript, targeting Web (HTML5) as the primary export platform
 - **[Claude Code](https://claude.com/product/claude-code)** via the Godot MCP server, for AI-assisted development
 - Version control via Git/GitHub, Issues + Milestones for planning
 
 ## Getting started
 
-1. Install [Godot 4.6](https://godotengine.org/download), standard (non-Mono) build
+1. Install [Godot 4.7](https://godotengine.org/download), standard (non-Mono) build
 2. Clone this repo and open `project.godot` in the Godot editor
 3. Export templates (Web) need to be installed once via **Editor > Manage Export Templates**
 4. Use **Remote Debug > Run in Browser** to playtest locally
